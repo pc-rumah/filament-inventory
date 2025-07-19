@@ -15,10 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('kode_barang')->unique();
             $table->string('nama');
-            $table->foreignId('kategori_id')->constrained('kategori_barang')->cascadeOnDelete();
+            $table->string('gambar');
+            $table->foreignId('kategori_id')->constrained('kategori_barangs')->cascadeOnDelete();
             $table->foreignId('satuan_id')->constrained()->cascadeOnDelete();
             $table->integer('stok')->default(0);
-            $table->string('satuan');
             $table->text('keterangan')->nullable();
             $table->timestamps();
         });

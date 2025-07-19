@@ -24,4 +24,12 @@ class Barang extends Model
     {
         return $this->belongsTo(Satuan::class, 'satuan_id');
     }
+
+    //function untuk generate kode_barang secara otomatis
+    protected static function booted()
+    {
+        static::creating(function ($barang) {
+            $barang->kode_barang = 'BRG-' . now()->format('YmdHis');
+        });
+    }
 }

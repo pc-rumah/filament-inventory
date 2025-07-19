@@ -9,14 +9,17 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\BarangResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
 use App\Filament\Resources\BarangResource\RelationManagers;
-use Filament\Tables\Filters\SelectFilter;
+use Filament\Forms\Components\FileUpload;
 
 class BarangResource extends Resource
 {
@@ -30,6 +33,11 @@ class BarangResource extends Resource
     {
         return $form
             ->schema([
+                TextInput::make('kode_barang')
+                    ->hiddenOn('create')
+                    ->disabled()
+                    ->dehydrated()
+                    ->unique(ignoreRecord: true),
                 TextInput::make('nama')
                     ->label('Nama Barang')
                     ->required()
@@ -44,9 +52,13 @@ class BarangResource extends Resource
                     ->label('Stok')
                     ->required()
                     ->numeric(),
-                TextInput::make('Keterangan')
+                Textarea::make('keterangan')
                     ->label('Keterangan')
                     ->maxLength(255),
+                FileUpload::make('gambar')
+                    ->label('Gambar Barang')
+                    ->image()
+                    ->maxSize(2048),
             ]);
     }
 
@@ -63,13 +75,14 @@ class BarangResource extends Resource
                 TextColumn::make('kategori.nama_kategori')
                     ->label('Kategori')
                     ->sortable(),
+                TextColumn::make('satuan.nama_satuan')
+                    ->label('Satuan'),
                 BadgeColumn::make('stok')
                     ->colors([
                         'danger' => fn($state): bool => $state < 5,
                         'warning' => fn($state): bool => $state >= 5 && $state < 10,
                         'success' => fn($state): bool => $state >= 10,
                     ]),
-
             ])
             ->filters([
                 SelectFilter::make('kategori_id')
@@ -77,11 +90,14 @@ class BarangResource extends Resource
                     ->label('Kategori'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    ExportBulkAction::make(),
                 ]),
             ]);
     }

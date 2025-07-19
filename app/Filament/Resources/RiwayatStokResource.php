@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use Filament\Forms;
 use Filament\Tables;
+use App\Models\Barang;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\RiwayatStok;
@@ -12,17 +13,18 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Tables\Columns\BadgeColumn;
 use Filament\Forms\Components\DatePicker;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Tables\Actions\ExportBulkAction;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\RiwayatStokResource\Pages;
 use App\Filament\Resources\RiwayatStokResource\RelationManagers;
-use Filament\Tables\Columns\BadgeColumn;
 
 class RiwayatStokResource extends Resource
 {
     protected static ?string $model = RiwayatStok::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
@@ -36,13 +38,28 @@ class RiwayatStokResource extends Resource
                 Select::make('tipe')
                     ->options([
                         'masuk' => 'Masuk',
-                        'Keluar' => 'Keluar',
+                        'keluar' => 'Keluar',
                     ])
                     ->required(),
                 TextInput::make('jumlah')
                     ->label('Jumlah')
                     ->required()
-                    ->numeric(),
+                    ->numeric()
+                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                        $barangId = $get('barang_id');
+                        $tipe = $get('tipe');
+
+                        if ($barangId && $tipe === 'keluar') {
+                            $barang = Barang::find($barangId);
+                            if ($barang && $state > $barang->stok) {
+                                $set('jumlah', $barang->stok);
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Jumlah melebihi stok')
+                                    ->danger()
+                                    ->send();
+                            }
+                        }
+                    }),
                 DatePicker::make('tanggal')
                     ->label('Tanggal')
                     ->required()
@@ -76,10 +93,12 @@ class RiwayatStokResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    ExportBulkAction::make(),
                 ]),
             ]);
     }
