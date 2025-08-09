@@ -3,11 +3,13 @@
 namespace App\Providers\Filament;
 
 use Filament\Pages;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Panel;
 use Filament\Widgets;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Http\Middleware\Authenticate;
+use Jeffgreco13\FilamentBreezy\BreezyCore;
 use Illuminate\Session\Middleware\StartSession;
 use Devonab\FilamentEasyFooter\EasyFooterPlugin;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -38,8 +40,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                //
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -56,8 +57,16 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->plugins([
+                FilamentShieldPlugin::make(),
+                BreezyCore::make()
+                    ->enableBrowserSessions(condition: true)
+                    ->myProfile(
+                        userMenuLabel: 'My Profile',
+                        hasAvatars: true,
+                        slug: 'my-profile',
+                    ),
                 EasyFooterPlugin::make()
-                    ->withLoadTime('This page Loaded in'),
+                    ->withLoadTime('This page loaded in'),
             ]);
     }
 }
